@@ -1,0 +1,333 @@
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from utils.pdf_reader import extract_text_from_pdf
+import tempfile
+from google import genai
+from dotenv import load_dotenv
+import os
+from pydantic import BaseModel
+
+from agents.clause_extractor import extract_clauses
+from agents.summarizer import summarize_contract
+from agents.risk_analyzer import analyze_risks
+from agents.legal_intelligence import analyze_legal_intelligence
+from agents.loophole_tester import stress_test_contract
+from agents.statute_mapper import map_statutes
+from agents.bias_meter import analyze_bias
+from agents.recommendation_engine import generate_recommendation
+from agents.fraud_detector import detect_fraud_indicators
+
+from rag.rag_qa import ingest_contract, ask_contract
+
+# -------------------------
+# REQUEST MODEL
+# -------------------------
+
+class RAGQuestionRequest(BaseModel):
+    question: str
+
+
+class ContractRequest(BaseModel):
+    contract_text: str
+
+
+class MemoryQuestionRequest(BaseModel):
+    session_id: str
+    question: str
+
+
+# -------------------------
+# LOAD ENV & INIT CLIENT
+# -------------------------
+
+load_dotenv()
+
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY not found in .env")
+
+client = genai.Client(api_key=api_key)
+
+# -------------------------
+# FASTAPI APP
+# -------------------------
+
+app = FastAPI(
+    title="AI CLM Paralegal Backend",
+    description="Backend API for Contract Analysis using Gemini",
+    version="1.0"
+)
+
+# -------------------------
+# BASIC ROUTES
+# -------------------------
+
+@app.get("/")
+def home():
+    return {"message": "AI CLM Backend is running "}
+
+@app.get("/health")
+def health_check():
+    return {"status": "OK"}
+
+# -------------------------
+# STEP 2: SUMMARIZER
+# -------------------------
+
+@app.post("/summarize")
+def summarize_contract_api(request: ContractRequest):
+    try:
+        summary = summarize_contract(request.contract_text, client)
+        return {"summary": summary}
+
+    except Exception as e:
+        print("🔥 ERROR IN /summarize:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal error during contract summarization"
+        )
+
+# -------------------------
+# STEP 3: CLAUSE EXTRACTION
+# -------------------------
+# extract clauses from the contract
+@app.post("/extract-clauses")
+def extract_clauses_api(request: ContractRequest):
+    try:
+        clauses = extract_clauses(request.contract_text, client)
+        return {"clauses": clauses}
+
+    except Exception as e:
+        print("🔥 ERROR IN /extract-clauses:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal error during clause extraction"
+        )
+
+# analyze the contract and return the risks
+@app.post("/risk-analysis")
+def risk_analysis_api(request: ContractRequest):
+    try:
+        risks = analyze_risks(request.contract_text, client)
+        return risks
+    except Exception as e:
+        print("🔥 ERROR IN /risk-analysis:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal error during risk analysis"
+        )
+
+# analyze the contract and return the legal intelligence
+@app.post("/legal-intelligence")
+def legal_intelligence_api(request: ContractRequest):
+    try:
+        result = analyze_legal_intelligence(request.contract_text, client)
+        return result
+    except Exception as e:
+        print("🔥 FULL ERROR IN /legal-intelligence:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)   # 👈 expose real error
+        )
+
+# stress test the contract with breach scenarios
+@app.post("/stress-test")
+def stress_test_api(request: ContractRequest):
+    try:
+        result = stress_test_contract(request.contract_text, client)
+        return result
+    except Exception as e:
+        print("🔥 ERROR IN /stress-test:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal error during contract stress testing"
+        )
+
+# map contract clauses to applicable statutes
+@app.post("/statute-mapping")
+def statute_mapping_api(request: ContractRequest):
+    try:
+        result = map_statutes(request.contract_text, client)
+        return result
+    except Exception as e:
+        print("🔥 ERROR IN /statute-mapping:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal error during statute mapping"
+        )
+
+# analyze contract fairness and bias
+@app.post("/bias-analysis")
+def bias_analysis_api(request: ContractRequest):
+    try:
+        result = analyze_bias(request.contract_text, client)
+        return result
+    except Exception as e:
+        print("🔥 ERROR IN /bias-analysis:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal error during bias analysis"
+        )
+
+# -------------------------
+# FULL ANALYSIS (all modules + recommendation)
+# -------------------------
+@app.post("/full-analysis")
+def full_analysis_api(request: ContractRequest):
+    try:
+        # Run all analysis modules in sequence
+        risks = analyze_risks(request.contract_text, client)
+        legal = analyze_legal_intelligence(request.contract_text, client)
+        bias = analyze_bias(request.contract_text, client)
+        stress = stress_test_contract(request.contract_text, client)
+        fraud = detect_fraud_indicators(request.contract_text, client)
+
+        # Synthesize into a single recommendation using all outputs
+        recommendation = generate_recommendation(
+            contract_text=request.contract_text,
+            risk_data=str(risks),
+            legal_data=str(legal),
+            bias_data=str(bias),
+            stress_test_data=str(stress),
+            fraud_data=str(fraud),
+            client=client,
+        )
+
+        # Ingest the contract into RAG so follow-up Q&A can use it
+        ingest_contract(request.contract_text, client)
+
+        return {
+            "risks": risks,
+            "legal_intelligence": legal,
+            "bias_analysis": bias,
+            "stress_test": stress,
+            "fraud_indicators": fraud,
+            "recommendation": recommendation,
+        }
+    except Exception as e:
+        print("🔥 ERROR IN /full-analysis:", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/full-analysis-pdf")
+async def full_analysis_pdf_api(file: UploadFile = File(...)):
+    """Extract text from PDF and run the same full-analysis pipeline as /full-analysis."""
+    try:
+        if not file.filename or not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Only PDF files are supported")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(await file.read())
+            temp_path = temp_file.name
+        try:
+            contract_text = extract_text_from_pdf(temp_path)
+        finally:
+            os.unlink(temp_path)
+        if len(contract_text) < 100:
+            raise HTTPException(status_code=400, detail="PDF content is too short or unreadable")
+        risks = analyze_risks(contract_text, client)
+        legal = analyze_legal_intelligence(contract_text, client)
+        bias = analyze_bias(contract_text, client)
+        stress = stress_test_contract(contract_text, client)
+        fraud = detect_fraud_indicators(contract_text, client)
+        recommendation = generate_recommendation(
+            contract_text=contract_text,
+            risk_data=str(risks),
+            legal_data=str(legal),
+            bias_data=str(bias),
+            stress_test_data=str(stress),
+            fraud_data=str(fraud),
+            client=client,
+        )
+
+        # Ingest the contract into RAG so follow-up Q&A can use it
+        ingest_contract(contract_text, client)
+
+        return {
+            "risks": risks,
+            "legal_intelligence": legal,
+            "bias_analysis": bias,
+            "stress_test": stress,
+            "fraud_indicators": fraud,
+            "recommendation": recommendation,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("🔥 ERROR IN /full-analysis-pdf:", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# analyze the pdf file and return the analysis
+@app.post("/analyze-pdf")
+async def analyze_pdf(file: UploadFile = File(...)):
+    try:
+        # Validate file type
+        if not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF files are supported"
+            )
+
+        # Save PDF temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(await file.read())
+            temp_path = temp_file.name
+
+        # Extract text from PDF
+        contract_text = extract_text_from_pdf(temp_path)
+
+        if len(contract_text) < 100:
+            raise HTTPException(
+                status_code=400,
+                detail="PDF content is too short or unreadable"
+            )
+
+        # 🔥 Reuse Step 6 (Legal Intelligence)
+        result = analyze_legal_intelligence(contract_text, client)
+
+        return {
+            "source": "pdf",
+            "analysis": result
+        }
+
+    except Exception as e:
+        print("🔥 ERROR IN /analyze-pdf:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+# extract contract text and ingest it into the RAG database
+@app.post("/rag/ingest")
+def ingest_contract_api(request: ContractRequest):
+    try:
+        ingest_contract(request.contract_text, client)
+        return {"status": "Contract indexed successfully"}
+
+    except Exception as e:
+        print("🔥 ERROR IN /rag/ingest:", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/rag/ask")
+def ask_contract_api(request: RAGQuestionRequest):
+    try:
+        # Stateless / default session usage
+        answer = ask_contract(request.question, client, session_id="default")
+        return {"answer": answer}
+
+    except Exception as e:
+        print("🔥 ERROR IN /rag/ask:", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/rag/ask-with-memory")
+def ask_with_memory_api(request: MemoryQuestionRequest):
+    try:
+        answer = ask_contract(
+            request.question,
+            client,
+            request.session_id,
+        )
+        return {"answer": answer}
+    except Exception as e:
+        print("🔥 ERROR IN /rag/ask-with-memory:", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))
