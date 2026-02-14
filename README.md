@@ -1,24 +1,14 @@
 # CLM
-Perfect. Here is a **clean, professional, copy-paste ready README** with:
-
-* Clear structure
-* Clean formatting
-* Architecture diagrams (Markdown compatible)
-* Recruiter-friendly language
-* Not over-cluttered
-* GitHub-ready
-
-You can copy this whole thing directly into `README.md`.
 
 ---
 
-# ⚖️ AI CLM Paralegal Assistant
+# AI CLM Paralegal Assistant
 
 An AI-powered **Contract Lifecycle Management (CLM)** system that simulates a paralegal-level contract intelligence assistant using multi-agent LLM architecture, RAG, OCR, legal reasoning, fraud detection, bias analysis, and explainable decision support.
 
 ---
 
-## 🚀 Overview
+## Overview
 
 Contracts are long, complex, and legally risky.
 This system helps users:
@@ -37,7 +27,7 @@ It is designed as a **decision-support system**, not legal advice.
 
 ---
 
-# 🏗 System Architecture
+# System Architecture
 
 ## High-Level Flow
 
@@ -86,11 +76,11 @@ Interactive Q&A (Memory + RAG)
 
 ---
 
-# 🧠 Core Features
+# Core Features
 
 ---
 
-## 📄 Universal PDF Support (Text + Scanned)
+## Universal PDF Support (Text + Scanned)
 
 * Supports digital PDFs
 * Uses **Tesseract OCR** for scanned documents
@@ -99,7 +89,7 @@ Interactive Q&A (Memory + RAG)
 
 ---
 
-## 🔍 Clause Extraction Agent
+## Clause Extraction Agent
 
 Automatically identifies:
 
@@ -113,7 +103,7 @@ Automatically identifies:
 
 ---
 
-## ⚠️ Risk Analysis Agent
+## Risk Analysis Agent
 
 Detects:
 
@@ -127,7 +117,7 @@ Detects:
 
 ---
 
-## 📚 Legal Intelligence & Statute Mapper
+##  Legal Intelligence & Statute Mapper
 
 * Identifies applicable laws
 * Maps clauses to statutes
@@ -139,7 +129,7 @@ Detects:
 
 ---
 
-## 🚨 Fraud Risk Indicator Engine
+##  Fraud Risk Indicator Engine
 
 Analyzes for:
 
@@ -153,7 +143,7 @@ Analyzes for:
 
 ---
 
-## ⚖️ Bias Meter (Fairness Analyzer)
+##  Bias Meter (Fairness Analyzer)
 
 Determines:
 
@@ -167,7 +157,7 @@ Provides reasoning and fairness insights.
 
 ---
 
-## 🧪 Loophole Detector / Stress Test
+##  Loophole Detector / Stress Test
 
 Simulates:
 
@@ -184,7 +174,7 @@ Evaluates:
 
 ---
 
-## 🧩 Compliance Gap Analyzer
+##  Compliance Gap Analyzer
 
 Identifies:
 
@@ -197,7 +187,7 @@ Identifies:
 
 ---
 
-## 🧠 RAG (Retrieval-Augmented Generation)
+##  RAG (Retrieval-Augmented Generation)
 
 * Splits contracts into chunks
 * Generates embeddings using Gemini
@@ -212,7 +202,7 @@ Benefits:
 
 ---
 
-## 🗂 Session Memory
+##  Session Memory
 
 * Remembers user identity (e.g., name)
 * Maintains conversational context
@@ -221,7 +211,7 @@ Benefits:
 
 ---
 
-## 🏁 Final Recommendation Engine
+##  Final Recommendation Engine
 
 Aggregates outputs from all agents and produces:
 
@@ -239,7 +229,7 @@ Aggregates outputs from all agents and produces:
 
 ---
 
-# 🛠 Tech Stack
+#  Tech Stack
 
 ### Backend
 
@@ -269,7 +259,7 @@ Aggregates outputs from all agents and produces:
 
 ---
 
-# 📦 Installation
+#  Installation
 
 ## 1️⃣ Clone Repository
 
@@ -280,7 +270,7 @@ cd ai-clm-paralegal
 
 ---
 
-## 2️⃣ Install Dependencies
+## 2️ Install Dependencies
 
 ```bash
 pip install fastapi uvicorn streamlit chromadb pytesseract pdf2image pillow requests python-dotenv
@@ -288,7 +278,7 @@ pip install fastapi uvicorn streamlit chromadb pytesseract pdf2image pillow requ
 
 ---
 
-## 3️⃣ Install Tesseract (Required for OCR)
+## 3️ Install Tesseract (Required for OCR)
 
 Download from:
 
@@ -302,7 +292,7 @@ utils/pdf_reader.py
 
 ---
 
-## 4️⃣ Add Gemini API Key
+## 4️ Add Gemini API Key
 
 Create `.env` file:
 
@@ -312,7 +302,7 @@ GEMINI_API_KEY=your_api_key_here
 
 ---
 
-# ▶️ Running the Application
+#  Running the Application
 
 ## Start Backend
 
@@ -334,7 +324,7 @@ http://localhost:8501
 
 ---
 
-# 🧪 Usage Flow
+#  Usage Flow
 
 1. Upload contract (PDF or text)
 2. System performs multi-agent analysis
@@ -344,7 +334,7 @@ http://localhost:8501
 
 ---
 
-# 🎯 Design Philosophy
+#  Design Philosophy
 
 * Modular multi-agent architecture
 * Explainable AI outputs
@@ -355,7 +345,7 @@ http://localhost:8501
 
 ---
 
-# 🔮 Future Improvements
+#  Future Improvements
 
 * Clause redlining suggestions
 * Version comparison engine
@@ -366,18 +356,9 @@ http://localhost:8501
 
 ---
 
-# 📌 Disclaimer
+#  Disclaimer
 
 This system provides AI-based decision support and educational insights.
 It does not provide legal advice.
-
----
-
-# 👨‍💻 Author
-
-Yashvardhan Debas
-AI & Legal-Tech Enthusiast
-
-Built as an advanced multi-agent LLM system simulating a contract intelligence assistant.
 
 ---
