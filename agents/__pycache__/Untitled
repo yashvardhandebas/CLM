@@ -1,0 +1,49 @@
+from google import genai
+from google.genai.errors import ClientError
+
+def extract_clauses(contract_text: str, client: genai.Client) -> dict:
+    if not contract_text or len(contract_text.strip()) < 20:
+        return {
+            "error": "Please provide a valid contract text."
+        }
+
+    prompt = f"""
+    You are a legal paralegal AI.
+
+    Extract the following clauses from the contract.
+    If a clause is missing, say "Not Found".
+
+    Return the output strictly in JSON format with these keys:
+    - payment
+    - termination
+    - liability
+    - confidentiality
+    - jurisdiction
+
+    Contract:
+    {contract_text}
+    """
+
+    try:
+        response = client.models.generate_content(
+            model="models/gemini-2.5-flash",  # ✅ quota-safe
+            contents=prompt
+        )
+    except ClientError as e:
+        if "429" in str(e):
+            return {"error": "AI quota exceeded. Please try again later."}
+        return {"error": str(e)}
+
+    # Safe extraction
+    if getattr(response, "text", None):
+        return {"clauses": response.text}
+
+    try:
+        for c in response.candidates:
+            for p in c.content.parts:
+                if hasattr(p, "text"):
+                    return {"clauses": p.text}
+    except Exception:
+        pass
+
+    return {"error": "Unable to extract clauses."}
